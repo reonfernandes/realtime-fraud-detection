@@ -1,0 +1,9 @@
+server:
+    port: 8200
+
+spring:
+    mongodb:
+        uri: ${MONGODB_URI}
+    data:
+        redis:
+            url: ${REDIS_URL}
