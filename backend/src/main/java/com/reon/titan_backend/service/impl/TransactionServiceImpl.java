@@ -59,4 +59,15 @@ public class TransactionServiceImpl implements TransactionService {
         );
         return transactionMapper.transactionStatusResponse(transaction);
     }
+
+    @Override
+    public void updateTransactionStatus(String transactionId, Status status) {
+        Transaction transaction = transactionRepository.findById(transactionId)
+                .orElseThrow(() -> new TransactionNotFound("Transaction not found.."));
+
+        transaction.setStatus(status);
+        transactionRepository.save(transaction);
+
+        log.info("Transaction: {} status updated to: {}", transactionId, status);
+    }
 }

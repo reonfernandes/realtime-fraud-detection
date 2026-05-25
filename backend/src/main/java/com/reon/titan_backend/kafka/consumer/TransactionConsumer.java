@@ -1,6 +1,10 @@
 package com.reon.titan_backend.kafka.consumer;
 
+import com.reon.titan_backend.document.type.Status;
 import com.reon.titan_backend.dto.TransactionEvent;
+import com.reon.titan_backend.rule.FraudRuleEngine;
+import com.reon.titan_backend.service.FraudAlertService;
+import com.reon.titan_backend.service.TransactionService;
 import com.reon.titan_backend.service.cache.TransactionCachingService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.BackOff;
@@ -14,9 +18,15 @@ import org.springframework.stereotype.Component;
 public class TransactionConsumer {
 
     private final TransactionCachingService cachingService;
+    private final FraudRuleEngine fraudRuleEngine;
+    private final FraudAlertService fraudAlertService;
+    private final TransactionService transactionService;
 
-    public TransactionConsumer(TransactionCachingService cachingService) {
+    public TransactionConsumer(TransactionCachingService cachingService, FraudRuleEngine fraudRuleEngine, FraudAlertService fraudAlertService, TransactionService transactionService) {
         this.cachingService = cachingService;
+        this.fraudRuleEngine = fraudRuleEngine;
+        this.fraudAlertService = fraudAlertService;
+        this.transactionService = transactionService;
     }
 
     /**
@@ -45,6 +55,17 @@ public class TransactionConsumer {
     )
     public void transactionWorkerEngine(TransactionEvent transactionEvent) {
         log.info("Consuming transaction event: {}", transactionEvent.transactionId());
-        cachingService.cacheUserTransaction(transactionEvent.userId());
+
+        Long currentCount = cachingService.incrementAndRetrieveCount(transactionEvent.userId());
+        boolean isFraud = fraudRuleEngine.hasWindowLimitExceeded(currentCount);
+
+        if (isFraud) {
+            fraudAlertService.raiseFraudAlert(transactionEvent, "Velocity threshold exceeded.");
+            transactionService.updateTransactionStatus(transactionEvent.transactionId(), Status.FRAUDULENT);
+        } else {
+            transactionService.updateTransactionStatus(transactionEvent.transactionId(), Status.APPROVED);
+        }
+
+        log.info("Fraud check result for user: {} | isFraud: {}", transactionEvent.userId(), isFraud);
     }
 }

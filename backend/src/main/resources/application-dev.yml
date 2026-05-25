@@ -43,3 +43,5 @@ security:
         transaction:
             key: titanguard:transaction:window
             expiration: 60
+    transactions:
+        max-count: 5

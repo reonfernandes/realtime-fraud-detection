@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
@@ -35,14 +35,15 @@ public class TransactionCachingServiceImpl implements TransactionCachingService 
     }
 
     @Override
-    public void cacheUserTransaction(String userId) {
+    public Long incrementAndRetrieveCount(String userId) {
         String key = generateUniqueUserTransactionKey(userId);
         Long currentCount = incrementTransactionCount(key);
-        log.info("Incremented window counter for user: {}. Current window count: {}", userId, currentCount);
 
         if (currentCount != null && currentCount == 1) {
-            // redis command expire key seconds
-            redisTemplate.expire(key, Duration.ofSeconds(windowExpirationSeconds));
-            log.debug("Set user window sliding expiration to {} seconds", windowExpirationSeconds);        }
+            redisTemplate.expire(key, windowExpirationSeconds, TimeUnit.SECONDS);
+            log.debug("Set user window sliding expiration to {} seconds", windowExpirationSeconds);
+        }
+
+        return currentCount != null ? currentCount : 0L;
     }
 }
