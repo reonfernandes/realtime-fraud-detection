@@ -1,6 +1,7 @@
 package com.reon.titan_backend.mapper;
 
 import com.reon.titan_backend.document.Transaction;
+import com.reon.titan_backend.dto.TransactionEvent;
 import com.reon.titan_backend.dto.TransactionRequest;
 import com.reon.titan_backend.dto.response.TransactionResponse;
 import com.reon.titan_backend.dto.response.TransactionStatusResponse;
@@ -34,5 +35,15 @@ public class TransactionMapper {
                 .initialTransactionTime(transaction.getTimestamp())
                 .build();
         return statusResponse;
+    }
+
+    public TransactionEvent rawTransactionEvent(Transaction transaction) {
+        TransactionEvent transactionEvent = TransactionEvent.builder()
+                .transactionId(transaction.getTransactionId())
+                .userId(transaction.getUserId())
+                .amount(transaction.getAmount())
+                .transactionTimeStamp(transaction.getTimestamp())
+                .build();
+        return transactionEvent;
     }
 }

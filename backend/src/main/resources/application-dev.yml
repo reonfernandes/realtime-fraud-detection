@@ -16,3 +16,26 @@ spring:
             host: ${REDIS_HOST}
             port: ${REDIS_PORT}
             database: ${REDIS_DATABASE}
+    kafka:
+        bootstrap-servers: localhost:9092
+        producer:
+            key-serializer: org.apache.kafka.common.serialization.StringSerializer
+            value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+            retries: 3
+            acks: all
+        consumer:
+            key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+            value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+            group-id: titan_guard_consumer
+            auto-offset-reset: earliest
+            enable-auto-commit: false
+            properties:
+                spring:
+                    json:
+                        trusted:
+                            packages: "*"
+
+security:
+    kafka:
+        topic:
+            transaction: raw_transaction

@@ -2,10 +2,12 @@ package com.reon.titan_backend.service.impl;
 
 import com.reon.titan_backend.document.Transaction;
 import com.reon.titan_backend.document.type.Status;
+import com.reon.titan_backend.dto.TransactionEvent;
 import com.reon.titan_backend.dto.TransactionRequest;
 import com.reon.titan_backend.dto.response.TransactionResponse;
 import com.reon.titan_backend.dto.response.TransactionStatusResponse;
 import com.reon.titan_backend.exception.TransactionNotFound;
+import com.reon.titan_backend.kafka.TransactionProducer;
 import com.reon.titan_backend.mapper.TransactionMapper;
 import com.reon.titan_backend.repository.TransactionRepository;
 import com.reon.titan_backend.service.TransactionService;
@@ -20,10 +22,13 @@ import java.util.UUID;
 public class TransactionServiceImpl implements TransactionService {
     private final TransactionRepository transactionRepository;
     private final TransactionMapper transactionMapper;
+    private final TransactionProducer transactionProducer;
 
-    public TransactionServiceImpl(TransactionRepository transactionRepository, TransactionMapper transactionMapper) {
+    public TransactionServiceImpl(TransactionRepository transactionRepository, TransactionMapper transactionMapper,
+                                  TransactionProducer transactionProducer) {
         this.transactionRepository = transactionRepository;
         this.transactionMapper = transactionMapper;
+        this.transactionProducer = transactionProducer;
     }
 
     @Override
@@ -40,6 +45,9 @@ public class TransactionServiceImpl implements TransactionService {
         log.info("Transaction accepted successfully, tracking id: {}", uniqueTransactionId);
 
         // event creation when transaction is accepted - kafka
+        log.info("Raw Transaction event triggered");
+        TransactionEvent rawTransactionEvent = transactionMapper.rawTransactionEvent(savedTransaction);
+        transactionProducer.publishRawTransaction(rawTransactionEvent);
 
         return transactionMapper.responseToUser(savedTransaction);
     }
