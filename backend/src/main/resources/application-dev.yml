@@ -39,3 +39,7 @@ security:
     kafka:
         topic:
             transaction: raw_transaction
+    redis:
+        transaction:
+            key: titanguard:transaction:window
+            expiration: 60

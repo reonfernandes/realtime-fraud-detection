@@ -7,7 +7,7 @@ import com.reon.titan_backend.dto.TransactionRequest;
 import com.reon.titan_backend.dto.response.TransactionResponse;
 import com.reon.titan_backend.dto.response.TransactionStatusResponse;
 import com.reon.titan_backend.exception.TransactionNotFound;
-import com.reon.titan_backend.kafka.TransactionProducer;
+import com.reon.titan_backend.kafka.producer.TransactionProducer;
 import com.reon.titan_backend.mapper.TransactionMapper;
 import com.reon.titan_backend.repository.TransactionRepository;
 import com.reon.titan_backend.service.TransactionService;

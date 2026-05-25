@@ -1,4 +1,4 @@
-package com.reon.titan_backend.kafka;
+package com.reon.titan_backend.kafka.producer;
 
 import com.reon.titan_backend.dto.TransactionEvent;
 import lombok.extern.slf4j.Slf4j;
