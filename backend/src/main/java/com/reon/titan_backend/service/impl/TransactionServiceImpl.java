@@ -10,6 +10,7 @@ import com.reon.titan_backend.exception.TransactionNotFound;
 import com.reon.titan_backend.kafka.producer.TransactionProducer;
 import com.reon.titan_backend.mapper.TransactionMapper;
 import com.reon.titan_backend.repository.TransactionRepository;
+import com.reon.titan_backend.service.RateLimiterService;
 import com.reon.titan_backend.service.TransactionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,16 +24,21 @@ public class TransactionServiceImpl implements TransactionService {
     private final TransactionRepository transactionRepository;
     private final TransactionMapper transactionMapper;
     private final TransactionProducer transactionProducer;
+    private final RateLimiterService rateLimiterService;
 
     public TransactionServiceImpl(TransactionRepository transactionRepository, TransactionMapper transactionMapper,
-                                  TransactionProducer transactionProducer) {
+                                  TransactionProducer transactionProducer, RateLimiterService rateLimiterService) {
         this.transactionRepository = transactionRepository;
         this.transactionMapper = transactionMapper;
         this.transactionProducer = transactionProducer;
+        this.rateLimiterService = rateLimiterService;
     }
 
     @Override
     public TransactionResponse generateNewTransaction(TransactionRequest transactionRequest) {
+        // check for request limit
+        rateLimiterService.enforceRateLimit(transactionRequest.userId());
+
         log.info("Processing new transaction for user: {}", transactionRequest.userId());
         Transaction transaction = transactionMapper.mapToEntity(transactionRequest);
 
