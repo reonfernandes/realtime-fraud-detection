@@ -1,93 +1,122 @@
-# TitanGuard — Real-Time Fraud Detection & Alert Engine
+# TitanGuard — Real-Time Fraud Detection Engine
 
-A backend system that evaluates financial transactions for fraud in real time using an asynchronous, event-driven architecture. 
-The API accepts a transaction and immediately returns `202 Accepted`, while a Kafka consumer evaluates fraud rules in 
-the background — keeping the hot path fast and non-blocking.
- 
+TitanGuard is a high-performance, event-driven backend system designed to evaluate financial transactions for fraud in 
+real time. By leveraging an asynchronous architecture, the system ensures that transaction ingestion remains non-blocking 
+and lightning-fast, while complex fraud analysis happens seamlessly in the background.
+
 ---
 
-## How it works
+## Key Features
 
-![Project Flow](Project%20Flow.png)
+- **Asynchronous Processing:** Transactions are accepted immediately via a REST API and queued for background evaluation using **Apache Kafka**.
+- **Real-Time Fraud Evaluation:** A dedicated rule engine inspects transactions for high-value anomalies and suspicious activity patterns.
+- **Intelligent Rate Limiting:** Integrated **Redis-based rate limiting** prevents system abuse and identifies high-frequency transaction bursts.
+- **Automated Alerts:** Fraudulent or suspicious transactions are automatically flagged and persisted in **MongoDB** for further investigation.
+- **Fault Tolerance:** Robust error handling with **Dead Letter Queue (DLQ)** support to ensure no transaction data is lost during processing failures.
+
+---
+
+## Architecture Overview
+
+TitanGuard follows a modern, event-driven microservices pattern:
+
+1.  **Ingestion:** A Spring Boot REST API receives a transaction request.
+2.  **Rate Limiting:** Redis validates the request frequency against per-user limits.
+3.  **Producers:** Validated requests are published to a Kafka topic (`raw_transaction`).
+4.  **Consumers:** Background workers consume transaction events and run them through the **Fraud Rule Engine**.
+5.  **Rule Engine:** Evaluates transactions based on:
+    *   **Velocity:** Maximum transaction count per time window.
+    *   **Value:** High-value transaction thresholds.
+    *   **Timing:** Transactions occurring during "suspicious" hours (e.g., 1 AM - 4 AM).
+6.  **Persistence:** Final statuses and fraud alerts are stored in MongoDB.
 
 ---
 
 ## Tech Stack
 
-| Layer                | Technology              | Purpose                            |
-|----------------------|-------------------------|------------------------------------|
-| Language             | Java 21                 | Core application language          |
-| Framework            | Spring Boot 4.x         | REST API + Kafka consumer          |
-| Message Broker       | Apache Kafka (KRaft)    | Async transaction ingestion        |
-| Cache / Rate Limiter | Redis                   | Per-user transaction rate tracking |
-| Database             | MongoDB                 | Fraud alerts + transaction storage |
-| Containerisation     | Docker + Docker Compose | Local infrastructure setup         |
-| API Testing          | Postman                 | Manual endpoint verification       |
+| Layer                | Technology              | Purpose                                   |
+|----------------------|-------------------------|-------------------------------------------|
+| **Language**         | Java 21                 | Core application development              |
+| **Framework**        | Spring Boot 3.x         | API Development & Kafka Orchestration     |
+| **Message Broker**   | Apache Kafka (KRaft)    | Distributed event streaming & ingestion   |
+| **Cache / Tracking** | Redis                   | Rate limiting & transaction windowing     |
+| **Database**         | MongoDB                 | Storage for transactions and fraud alerts |
+| **Containerization** | Docker + Docker Compose | Simplified infrastructure deployment      |
 
 ---
 
-## API Endpoints
+## API Reference
 
-### Transactions
+### Transactions Ingestion
+`POST /api/v1/transactions`
 
-| Method | Endpoint                    | Description                         | Response       |
-|--------|-----------------------------|-------------------------------------|----------------|
-| `POST` | `/api/v1/transactions`      | Submit a transaction for evaluation | `202 Accepted` |
-| `GET`  | `/api/v1/transactions/{id}` | Get transaction status by ID        | `200 OK`       |
+**Description:** Submits a new transaction for fraud evaluation.
 
----
-
-### Request — Submit Transaction
-
-```http
-POST /api/v1/transactions
-Content-Type: application/json
- 
+**Request Body:**
+```json
 {
   "userId": "user_101",
-  "amount": 15000
+  "amount": 15000.0
 }
 ```
 
-### Response
-
-```http
-HTTP/1.1 202 Accepted
- 
+**Response:** `202 Accepted`
+```json
 {
     "success": true,
     "message": "Transaction accepted into processing pipeline.",
     "data": {
         "transactionId": "1dd81b4a-72c4-4d65-a559-508cd6ef9a99",
-        "userId": "user-101",
-        "amount": 50.0,
+        "userId": "user_101",
+        "amount": 15000.0,
         "status": "PENDING"
     },
-    "timestamp": "2026-05-24T05:01:41.480211200Z"
+    "timestamp": "2026-05-24T05:01:41.480Z"
 }
 ```
 
-### Request — Retrieve Transaction Status
+### Transaction Status
+`GET /api/v1/transactions/{id}`
 
-```http
-POST /api/v1/transactions/{id}
-```
+**Description:** Retrieves the current status of a transaction (PENDING, APPROVED, FAILED, FRAUD).
 
-### Response
+**Response:** `200 OK`
 
-```http
-HTTP/1.1 200 Ok
- 
-{
-    "success": true,
-    "message": "Transaction fetched",
-    "data": {
-        "transactionId": "c7a61615-ac45-4173-b825-3f19f622c273",
-        "userId": "user_101",
-        "transactionStatus": "PENDING",
-        "initialTransactionTime": "2026-05-24T06:41:41.391Z"
-    },
-    "timestamp": "2026-05-24T06:41:59.321047200Z"
-}
-```
 ---
+
+## ⚙️ Setup & Installation
+
+### Prerequisites
+- JDK 21+
+- Docker & Docker Compose
+- Maven (optional, if not using the included wrapper)
+
+### Running with Docker Compose
+1. Clone the repository.
+2. Start the infrastructure (Kafka, MongoDB, Redis):
+   ```bash
+   docker-compose up -d
+   ```
+3. Run the backend application:
+   ```bash
+   cd backend
+   ./mvnw spring-boot:run
+   ```
+
+### Default Configuration
+- **Server Port:** 8100
+- **Fraud Rules (Dev):**
+  - High Value Limit: > $10,000
+  - Window Max Count: 3 transactions per 60s
+  - Suspicious Hours: 01:00 - 04:00 UTC
+
+---
+
+## 📂 Project Structure
+
+- `com.reon.titan_backend.controller`: REST endpoints for transaction management.
+- `com.reon.titan_backend.kafka`: Producers and consumers for event-driven flow.
+- `com.reon.titan_backend.rule`: Logic for fraud detection.
+- `com.reon.titan_backend.service`: Core business logic and database interactions.
+- `com.reon.titan_backend.document`: MongoDB entity definitions.
+- `com.reon.titan_backend.dto`: Data Transfer Objects for API and Kafka events.
