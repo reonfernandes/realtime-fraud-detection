@@ -4,30 +4,30 @@ import com.reon.titan_backend.document.type.Status;
 import com.reon.titan_backend.dto.TransactionEvent;
 import com.reon.titan_backend.rule.FraudRuleEngine;
 import com.reon.titan_backend.service.FraudAlertService;
+import com.reon.titan_backend.service.DeadLetterService;
 import com.reon.titan_backend.service.TransactionService;
 import com.reon.titan_backend.service.cache.TransactionCachingService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.BackOff;
+import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.annotation.RetryableTopic;
 import org.springframework.kafka.retrytopic.DltStrategy;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class TransactionConsumer {
 
     private final TransactionCachingService cachingService;
     private final FraudRuleEngine fraudRuleEngine;
     private final FraudAlertService fraudAlertService;
     private final TransactionService transactionService;
-
-    public TransactionConsumer(TransactionCachingService cachingService, FraudRuleEngine fraudRuleEngine, FraudAlertService fraudAlertService, TransactionService transactionService) {
-        this.cachingService = cachingService;
-        this.fraudRuleEngine = fraudRuleEngine;
-        this.fraudAlertService = fraudAlertService;
-        this.transactionService = transactionService;
-    }
+    private final DeadLetterService deadLetterService;
 
     /**
      * @param transactionEvent
@@ -56,6 +56,12 @@ public class TransactionConsumer {
     public void transactionWorkerEngine(TransactionEvent transactionEvent) {
         log.info("Consuming transaction event: {}", transactionEvent.transactionId());
 
+        // TEMPORARY: Test DLT by inducing failure for a specific "poison pill" userId
+//        if ("poison-pill".equals(transactionEvent.userId())) {
+//            log.warn("Poison pill detected! Simulating processing failure for DLT testing.");
+//            throw new RuntimeException("Simulated processing failure for DLT test");
+//        }
+
         Long currentCount = cachingService.incrementAndRetrieveCount(transactionEvent.userId());
         boolean isFraud = fraudRuleEngine.hasWindowLimitExceeded(currentCount);
 
@@ -67,5 +73,17 @@ public class TransactionConsumer {
         }
 
         log.info("Fraud check result for user: {} | isFraud: {}", transactionEvent.userId(), isFraud);
+    }
+
+    @DltHandler
+    public void handleDlt(TransactionEvent transactionEvent,
+                          @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
+                          @Header(KafkaHeaders.RECEIVED_PARTITION) Integer partition,
+                          @Header(KafkaHeaders.OFFSET) Long offset,
+                          @Header(KafkaHeaders.EXCEPTION_MESSAGE) String errorMessage) {
+        log.error("DLT reached for transaction: {} from topic: {} | Partition: {} | Offset: {} | Error: {}",
+                transactionEvent.transactionId(), topic, partition, offset, errorMessage);
+
+        deadLetterService.handleFailedTransaction(transactionEvent, errorMessage, topic, partition, offset);
     }
 }
