@@ -56,23 +56,26 @@ public class TransactionConsumer {
     public void transactionWorkerEngine(TransactionEvent transactionEvent) {
         log.info("Consuming transaction event: {}", transactionEvent.transactionId());
 
-        // TEMPORARY: Test DLT by inducing failure for a specific "poison pill" userId
-//        if ("poison-pill".equals(transactionEvent.userId())) {
-//            log.warn("Poison pill detected! Simulating processing failure for DLT testing.");
-//            throw new RuntimeException("Simulated processing failure for DLT test");
-//        }
-
         Long currentCount = cachingService.incrementAndRetrieveCount(transactionEvent.userId());
-        boolean isFraud = fraudRuleEngine.hasWindowLimitExceeded(currentCount);
+        
+        String fraudReason = null;
+        if (fraudRuleEngine.hasWindowLimitExceeded(currentCount)) {
+            fraudReason = "Velocity threshold exceeded.";
+        } else if (fraudRuleEngine.isHighValueTransaction(transactionEvent.amount())) {
+            fraudReason = "High-value transaction limit exceeded.";
+        } else if (fraudRuleEngine.isSuspiciousTime(transactionEvent.transactionTimeStamp())) {
+            fraudReason = "Transaction occurred during suspicious time window.";
+        }
 
-        if (isFraud) {
-            fraudAlertService.raiseFraudAlert(transactionEvent, "Velocity threshold exceeded.");
+        if (fraudReason != null) {
+            fraudAlertService.raiseFraudAlert(transactionEvent, fraudReason);
             transactionService.updateTransactionStatus(transactionEvent.transactionId(), Status.FRAUDULENT);
         } else {
             transactionService.updateTransactionStatus(transactionEvent.transactionId(), Status.APPROVED);
         }
 
-        log.info("Fraud check result for user: {} | isFraud: {}", transactionEvent.userId(), isFraud);
+        log.info("Fraud check result for user: {} | isFraud: {} | Reason: {}", 
+                transactionEvent.userId(), fraudReason != null, fraudReason);
     }
 
     @DltHandler

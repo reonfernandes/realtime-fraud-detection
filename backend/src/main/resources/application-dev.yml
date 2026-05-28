@@ -49,3 +49,7 @@ security:
             max-requests: 5
     transactions:
         max-count: 3
+        high-value-limit: 10000.0
+        suspicious-window:
+            start-hour: 1
+            end-hour: 4
