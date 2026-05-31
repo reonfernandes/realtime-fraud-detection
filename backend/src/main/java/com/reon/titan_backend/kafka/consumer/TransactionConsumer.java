@@ -57,6 +57,10 @@ public class TransactionConsumer {
         log.info("Consuming transaction event: {}", transactionEvent.transactionId());
 
         Long currentCount = cachingService.incrementAndRetrieveCount(transactionEvent.userId());
+        Double currentDailyTransactionTotal = cachingService.incrementAndRetrieveDailySum(
+                transactionEvent.userId(),
+                transactionEvent.amount()
+        );
         
         String fraudReason = null;
         if (fraudRuleEngine.hasWindowLimitExceeded(currentCount)) {
@@ -65,6 +69,8 @@ public class TransactionConsumer {
             fraudReason = "High-value transaction limit exceeded.";
         } else if (fraudRuleEngine.isSuspiciousTime(transactionEvent.transactionTimeStamp())) {
             fraudReason = "Transaction occurred during suspicious time window.";
+        } else if (fraudRuleEngine.isDailyLimitExceeded(currentDailyTransactionTotal)) {
+            fraudReason = "Daily Transaction limit reached.";
         }
 
         if (fraudReason != null) {

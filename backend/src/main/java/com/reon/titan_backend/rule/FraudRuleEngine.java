@@ -12,17 +12,20 @@ public class FraudRuleEngine {
     private final double HIGH_VALUE_LIMIT;
     private final int SUSPICIOUS_START_HOUR;
     private final int SUSPICIOUS_END_HOUR;
+    private final double DAILY_MAX_TRANSACTION_AMOUNT;
 
     public FraudRuleEngine(
             @Value("${security.transactions.max-count}") int maxTransactionPerWindow,
             @Value("${security.transactions.high-value-limit}") double highValueLimit,
             @Value("${security.transactions.suspicious-window.start-hour}") int suspiciousStartHour,
-            @Value("${security.transactions.suspicious-window.end-hour}") int suspiciousEndHour
+            @Value("${security.transactions.suspicious-window.end-hour}") int suspiciousEndHour,
+            @Value("${security.transactions.daily-sum.limit}") double dailyMaxTransactionAmount
     ) {
         MAX_TRANSACTION_PER_WINDOW = maxTransactionPerWindow;
         HIGH_VALUE_LIMIT = highValueLimit;
         SUSPICIOUS_START_HOUR = suspiciousStartHour;
         SUSPICIOUS_END_HOUR = suspiciousEndHour;
+        DAILY_MAX_TRANSACTION_AMOUNT = dailyMaxTransactionAmount;
     }
 
     public boolean hasWindowLimitExceeded(Long currentWindowCount) {
@@ -43,5 +46,9 @@ public class FraudRuleEngine {
             // Handles overnight window, e.g., 23 to 04
             return hour >= SUSPICIOUS_START_HOUR || hour <= SUSPICIOUS_END_HOUR;
         }
+    }
+
+    public boolean isDailyLimitExceeded(Double currentTotal) {
+        return currentTotal != null && currentTotal > DAILY_MAX_TRANSACTION_AMOUNT;
     }
 }
