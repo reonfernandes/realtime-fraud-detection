@@ -41,10 +41,10 @@ public class FraudRuleEngine {
         int hour = timestamp.atZone(ZoneOffset.UTC).getHour();
         
         if (SUSPICIOUS_START_HOUR <= SUSPICIOUS_END_HOUR) {
-            return hour >= SUSPICIOUS_START_HOUR && hour <= SUSPICIOUS_END_HOUR;
+            return hour >= SUSPICIOUS_START_HOUR && hour < SUSPICIOUS_END_HOUR;
         } else {
             // Handles overnight window, e.g., 23 to 04
-            return hour >= SUSPICIOUS_START_HOUR || hour <= SUSPICIOUS_END_HOUR;
+            return hour >= SUSPICIOUS_START_HOUR || hour < SUSPICIOUS_END_HOUR;
         }
     }
 
