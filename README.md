@@ -18,6 +18,8 @@ and lightning-fast, while complex fraud analysis happens seamlessly in the backg
 
 ## Architecture Overview
 
+![Project Flow](project-flow.png)
+
 TitanGuard follows a modern, event-driven microservices pattern:
 
 1.  **Ingestion:** A Spring Boot REST API receives a transaction request.
@@ -28,6 +30,7 @@ TitanGuard follows a modern, event-driven microservices pattern:
     *   **Velocity:** Maximum transaction count per time window.
     *   **Value:** High-value transaction thresholds.
     *   **Timing:** Transactions occurring during "suspicious" hours (e.g., 1 AM - 4 AM).
+    *   **Daily Total:** Sum of a user's approved transactions in a day.
 6.  **Persistence:** Final statuses and fraud alerts are stored in MongoDB.
 
 ---
@@ -78,7 +81,7 @@ TitanGuard follows a modern, event-driven microservices pattern:
 ### Transaction Status
 `GET /api/v1/transactions/{id}`
 
-**Description:** Retrieves the current status of a transaction (PENDING, APPROVED, FAILED, FRAUD).
+**Description:** Retrieves the current status of a transaction (PENDING, APPROVED, FRAUDULENT, FAILED).
 
 **Response:** `200 OK`
 
@@ -93,22 +96,36 @@ TitanGuard follows a modern, event-driven microservices pattern:
 
 ### Running with Docker Compose
 1. Clone the repository.
-2. Start the infrastructure (Kafka, MongoDB, Redis):
+2. Start everything (backend, Kafka, MongoDB, Redis):
    ```bash
-   docker-compose up -d
+   docker-compose up -d --build
    ```
-3. Run the backend application:
-   ```bash
-   cd backend
-   ./mvnw spring-boot:run
-   ```
+   The API will be available on `http://localhost:8100`.
+
+### Running the backend locally
+Start only the infrastructure and run the app from your IDE or the command line:
+```bash
+docker-compose up -d mongodb redis kafka
+cd backend
+./mvnw spring-boot:run
+```
+The default config points to localhost, so no environment variables are needed.
+To override anything, copy `.env.example` to `.env` and edit it.
+
+### Running the tests
+```bash
+cd backend
+./mvnw test
+```
 
 ### Default Configuration
 - **Server Port:** 8100
+- **Rate Limit:** 5 requests per 60s per user
 - **Fraud Rules (Dev):**
-  - High Value Limit: > $10,000
+  - High Value Limit: > 50,000
   - Window Max Count: 3 transactions per 60s
   - Suspicious Hours: 01:00 - 04:00 UTC
+  - Daily Total Limit: 50,000
 
 ---
 
