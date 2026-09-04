@@ -30,7 +30,7 @@ spring:
                 spring:
                     json:
                         trusted:
-                            packages: "*"
+                            packages: "com.reon.titan_backend.dto"
 
 security:
     kafka:
