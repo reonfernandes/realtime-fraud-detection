@@ -1,6 +1,6 @@
 services:
     mongodb:
-        image: mongo:latest
+        image: mongo:8.0
         container_name: titan_guard_db
         ports:
             -   "27017:27017"
@@ -8,7 +8,7 @@ services:
             -   mongo_data:/data/db
 
     redis:
-        image: redis:latest
+        image: redis:8.8.0-alpine
         container_name: titan_guard_cache
         ports:
             -   "6379:6379"
@@ -16,7 +16,7 @@ services:
             -   redis_cache_data:/data
 
     kafka:
-        image: apache/kafka:latest
+        image: apache/kafka:4.2.1
         container_name: titan_guard_kafka
         ports:
             -   "9092:9092"
