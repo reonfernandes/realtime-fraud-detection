@@ -44,6 +44,9 @@ security:
             key: titanguard:ratelimit:window
             expiration: 60
             max-requests: 5
+        processed:
+            key: titanguard:transaction:processed
+            expiration: 3600
     transactions:
         max-count: 3
         high-value-limit: 50000.0

@@ -19,16 +19,23 @@ public class TransactionCachingServiceImpl implements TransactionCachingService 
     private final String dailySumKey;
     private final Long dailySumKeyExpiration;
 
+    private final String processedKey;
+    private final long processedKeyExpiration;
+
     public TransactionCachingServiceImpl(StringRedisTemplate redisTemplate,
                                          @Value("${security.redis.transaction.expiration}") long windowExpirationSeconds,
                                          @Value("${security.redis.transaction.key}") String uniqueKey,
                                          @Value("${security.transactions.daily-sum.key}") String dailySumKey,
-                                         @Value("${security.transactions.daily-sum.expiration-days}") Long dailySumKeyExpiration) {
+                                         @Value("${security.transactions.daily-sum.expiration-days}") Long dailySumKeyExpiration,
+                                         @Value("${security.redis.processed.key}") String processedKey,
+                                         @Value("${security.redis.processed.expiration}") long processedKeyExpiration) {
         this.redisTemplate = redisTemplate;
         this.windowExpirationSeconds = windowExpirationSeconds;
         this.uniqueKey = uniqueKey;
         this.dailySumKey = dailySumKey;
         this.dailySumKeyExpiration = dailySumKeyExpiration;
+        this.processedKey = processedKey;
+        this.processedKeyExpiration = processedKeyExpiration;
     }
 
     private String generateUniqueUserTransactionKey(String userId) {
@@ -55,5 +62,27 @@ public class TransactionCachingServiceImpl implements TransactionCachingService 
         Double currentTotal = redisTemplate.opsForValue().increment(key, amount);
 
         return currentTotal != null ? currentTotal : 0.0;
+    }
+
+    @Override
+    public Double getDailySum(String userId) {
+        String currentTotal = redisTemplate.opsForValue().get(dailySumKey + ":" + userId);
+        return currentTotal != null ? Double.parseDouble(currentTotal) : 0.0;
+    }
+
+    @Override
+    public boolean isDuplicateEvent(String transactionId) {
+        String key = processedKey + ":" + transactionId;
+
+        // setIfAbsent gives false when the key is already there, means we already handled this event
+        Boolean firstTime = redisTemplate.opsForValue()
+                .setIfAbsent(key, "1", Duration.ofSeconds(processedKeyExpiration));
+
+        return firstTime == null || !firstTime;
+    }
+
+    @Override
+    public void removeProcessedEvent(String transactionId) {
+        redisTemplate.delete(processedKey + ":" + transactionId);
     }
 }

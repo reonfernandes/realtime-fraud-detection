@@ -56,12 +56,25 @@ public class TransactionConsumer {
     public void transactionWorkerEngine(TransactionEvent transactionEvent) {
         log.info("Consuming transaction event: {}", transactionEvent.transactionId());
 
+        // kafka can deliver the same event again on retry, so counting it twice must be avoided
+        if (cachingService.isDuplicateEvent(transactionEvent.transactionId())) {
+            log.info("Event already processed, skipping: {}", transactionEvent.transactionId());
+            return;
+        }
+
+        try {
+            evaluateTransaction(transactionEvent);
+        } catch (Exception exception) {
+            // clear the flag so the retry attempt can process this event again
+            cachingService.removeProcessedEvent(transactionEvent.transactionId());
+            throw exception;
+        }
+    }
+
+    private void evaluateTransaction(TransactionEvent transactionEvent) {
         Long currentCount = cachingService.incrementAndRetrieveCount(transactionEvent.userId());
-        Double currentDailyTransactionTotal = cachingService.incrementAndRetrieveDailySum(
-                transactionEvent.userId(),
-                transactionEvent.amount()
-        );
-        
+        Double currentDailyTransactionTotal = cachingService.getDailySum(transactionEvent.userId());
+
         String fraudReason = null;
         if (fraudRuleEngine.hasWindowLimitExceeded(currentCount)) {
             fraudReason = "Velocity threshold exceeded.";
@@ -69,7 +82,7 @@ public class TransactionConsumer {
             fraudReason = "High-value transaction limit exceeded.";
         } else if (fraudRuleEngine.isSuspiciousTime(transactionEvent.transactionTimeStamp())) {
             fraudReason = "Transaction occurred during suspicious time window.";
-        } else if (fraudRuleEngine.isDailyLimitExceeded(currentDailyTransactionTotal)) {
+        } else if (fraudRuleEngine.isDailyLimitExceeded(currentDailyTransactionTotal + transactionEvent.amount())) {
             fraudReason = "Daily Transaction limit reached.";
         }
 
@@ -77,10 +90,12 @@ public class TransactionConsumer {
             fraudAlertService.raiseFraudAlert(transactionEvent, fraudReason);
             transactionService.updateTransactionStatus(transactionEvent.transactionId(), Status.FRAUDULENT);
         } else {
+            // only approved amount should add up in the daily total
+            cachingService.incrementAndRetrieveDailySum(transactionEvent.userId(), transactionEvent.amount());
             transactionService.updateTransactionStatus(transactionEvent.transactionId(), Status.APPROVED);
         }
 
-        log.info("Fraud check result for user: {} | isFraud: {} | Reason: {}", 
+        log.info("Fraud check result for user: {} | isFraud: {} | Reason: {}",
                 transactionEvent.userId(), fraudReason != null, fraudReason);
     }
 
