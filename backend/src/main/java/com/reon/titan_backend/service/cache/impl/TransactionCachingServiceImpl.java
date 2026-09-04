@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 @Service
 @Slf4j
@@ -16,15 +16,18 @@ public class TransactionCachingServiceImpl implements TransactionCachingService 
     private final long windowExpirationSeconds;
     private final String uniqueKey;
 
+    private final String dailySumKey;
     private final Long dailySumKeyExpiration;
 
     public TransactionCachingServiceImpl(StringRedisTemplate redisTemplate,
                                          @Value("${security.redis.transaction.expiration}") long windowExpirationSeconds,
                                          @Value("${security.redis.transaction.key}") String uniqueKey,
+                                         @Value("${security.transactions.daily-sum.key}") String dailySumKey,
                                          @Value("${security.transactions.daily-sum.expiration-days}") Long dailySumKeyExpiration) {
         this.redisTemplate = redisTemplate;
         this.windowExpirationSeconds = windowExpirationSeconds;
         this.uniqueKey = uniqueKey;
+        this.dailySumKey = dailySumKey;
         this.dailySumKeyExpiration = dailySumKeyExpiration;
     }
 
@@ -33,33 +36,23 @@ public class TransactionCachingServiceImpl implements TransactionCachingService 
         return uniqueKey + ":" + userId;
     }
 
-    private Long incrementTransactionCount(String transactionKey) {
-        // redis command INCR key
-        return redisTemplate.opsForValue().increment(transactionKey);
-    }
-
     @Override
     public Long incrementAndRetrieveCount(String userId) {
         String key = generateUniqueUserTransactionKey(userId);
-        Long currentCount = incrementTransactionCount(key);
 
-        if (currentCount != null && currentCount == 1) {
-            redisTemplate.expire(key, windowExpirationSeconds, TimeUnit.SECONDS);
-            log.debug("Set user window sliding expiration to {} seconds", windowExpirationSeconds);
-        }
+        // set the key with ttl first so the window always expires
+        redisTemplate.opsForValue().setIfAbsent(key, "0", Duration.ofSeconds(windowExpirationSeconds));
+        Long currentCount = redisTemplate.opsForValue().increment(key);
 
         return currentCount != null ? currentCount : 0L;
     }
 
     @Override
     public Double incrementAndRetrieveDailySum(String userId, Double amount) {
-        String key = "user:daily:sum:" + userId;
-        Double currentTotal = redisTemplate.opsForValue().increment(key, amount);
+        String key = dailySumKey + ":" + userId;
 
-        if (currentTotal != null && currentTotal.equals(amount)) {
-            redisTemplate.expire(key, dailySumKeyExpiration, TimeUnit.DAYS);
-            log.debug("Set daily sum expiration for user {}: {} days", userId, dailySumKeyExpiration);
-        }
+        redisTemplate.opsForValue().setIfAbsent(key, "0", Duration.ofDays(dailySumKeyExpiration));
+        Double currentTotal = redisTemplate.opsForValue().increment(key, amount);
 
         return currentTotal != null ? currentTotal : 0.0;
     }

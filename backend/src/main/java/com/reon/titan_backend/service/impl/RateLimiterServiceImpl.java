@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 @Service
 @Slf4j
@@ -33,11 +33,10 @@ public class RateLimiterServiceImpl implements RateLimiterService {
     @Override
     public void enforceRateLimit(String userId) {
         String key = keyPrefix + ":" + userId;
-        Long requestCount = redisRateLimitTemplate.opsForValue().increment(key);
 
-        if (requestCount != null && requestCount == 1) {
-            redisRateLimitTemplate.expire(key, windowSeconds, TimeUnit.SECONDS);
-        }
+        // create the key along with its ttl first, otherwise the expiry can get skipped
+        redisRateLimitTemplate.opsForValue().setIfAbsent(key, "0", Duration.ofSeconds(windowSeconds));
+        Long requestCount = redisRateLimitTemplate.opsForValue().increment(key);
 
         if (requestCount != null && requestCount > maxRequests) {
             log.warn("Rate limit breached for user: {} | count: {}", userId, requestCount);

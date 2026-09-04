@@ -51,5 +51,6 @@ security:
             start-hour: 1
             end-hour: 4
         daily-sum:
+            key: titanguard:transaction:dailysum
             limit: 50000.0
             expiration-days: 1
