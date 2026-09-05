@@ -1,0 +1,24 @@
+name: Continuous Integration
+
+on:
+    push:
+        branches:
+            - "main"
+    pull_request:
+        branches:
+            - "main"
+    workflow_dispatch:
+
+jobs:
+    build-and-create-image:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v7.0.1
+
+            - name: Build image
+              run: docker build -t titanguard-backend ./backend
+
+            - name: Done
+              run: echo "Build successful, image created"
