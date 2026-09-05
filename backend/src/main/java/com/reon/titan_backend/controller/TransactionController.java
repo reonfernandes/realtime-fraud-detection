@@ -3,7 +3,7 @@ package com.reon.titan_backend.controller;
 import com.reon.titan_backend.dto.TransactionRequest;
 import com.reon.titan_backend.dto.response.TransactionResponse;
 import com.reon.titan_backend.dto.response.TransactionStatusResponse;
-import com.reon.titan_backend.exception.response.ApiResponse;
+import com.reon.titan_backend.dto.response.ApiResponse;
 import com.reon.titan_backend.service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
