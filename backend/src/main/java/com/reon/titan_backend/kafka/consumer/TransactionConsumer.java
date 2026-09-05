@@ -40,13 +40,13 @@ public class TransactionConsumer {
      * and multiply by 2s.
      *
      * If all attempts fail the record will be sent to DLT where the record will be stored in Database for manual inspection
-     * and raising alerts
+     * and raising alerts. If the DLT handler itself fails it is only logged, otherwise the record keeps coming back.
      */
 
     @RetryableTopic(
             attempts = "4",
             backOff = @BackOff(delay = 2000, multiplier = 2.0),
-            dltStrategy = DltStrategy.ALWAYS_RETRY_ON_ERROR,
+            dltStrategy = DltStrategy.FAIL_ON_ERROR,
             dltTopicSuffix = "-dlt"
     )
     @KafkaListener(
