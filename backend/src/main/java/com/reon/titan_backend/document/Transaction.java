@@ -2,7 +2,6 @@ package com.reon.titan_backend.document;
 
 import com.reon.titan_backend.document.type.Status;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -22,7 +21,6 @@ public class Transaction {
     private String userId;
     private Double amount;
 
-    @CreatedDate
     private Instant timestamp;
 
     @Indexed
