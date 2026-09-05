@@ -3,6 +3,7 @@ package com.reon.titan_backend.document;
 import com.reon.titan_backend.dto.TransactionEvent;
 import lombok.*;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
@@ -16,6 +17,7 @@ import java.time.Instant;
 public class FailedTransaction {
     @Id
     private String id;
+    @Indexed
     private String transactionId;
     private TransactionEvent payload;
     private String failureReason;
