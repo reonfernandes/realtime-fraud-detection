@@ -1,5 +1,7 @@
 # TitanGuard — Real-Time Fraud Detection Engine
 
+![CI](https://github.com/reonfernandes/realtime-fraud-detection/actions/workflows/workflow.yml/badge.svg)
+
 TitanGuard is a high-performance, event-driven backend system designed to evaluate financial transactions for fraud in 
 real time. By leveraging an asynchronous architecture, the system ensures that transaction ingestion remains non-blocking 
 and lightning-fast, while complex fraud analysis happens seamlessly in the background.
