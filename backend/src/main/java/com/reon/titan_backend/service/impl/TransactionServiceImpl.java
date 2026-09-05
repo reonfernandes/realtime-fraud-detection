@@ -68,11 +68,12 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public void updateTransactionStatus(String transactionId, Status status) {
-        Transaction transaction = transactionRepository.findById(transactionId)
-                .orElseThrow(() -> new TransactionNotFound("Transaction not found.."));
+        // single query update, avoids reading and saving the whole document
+        long updatedCount = transactionRepository.updateStatus(transactionId, status);
 
-        transaction.setStatus(status);
-        transactionRepository.save(transaction);
+        if (updatedCount == 0) {
+            throw new TransactionNotFound("Transaction not found..");
+        }
 
         log.info("Transaction: {} status updated to: {}", transactionId, status);
     }
