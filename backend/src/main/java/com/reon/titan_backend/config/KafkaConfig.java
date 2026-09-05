@@ -9,16 +9,19 @@ import org.springframework.kafka.config.TopicBuilder;
 @Configuration
 public class KafkaConfig {
     private final String transaction;
+    private final int partitions;
 
-    public KafkaConfig(@Value("${security.kafka.topic.transaction}") String transaction) {
+    public KafkaConfig(@Value("${security.kafka.topic.transaction}") String transaction,
+                       @Value("${security.kafka.topic.partitions}") int partitions) {
         this.transaction = transaction;
+        this.partitions = partitions;
     }
 
     @Bean
     public NewTopic rawTransactionTopic() {
         return TopicBuilder
                 .name(transaction)
-                .partitions(2)
+                .partitions(partitions)
                 .replicas(1)
                 .build();
     }

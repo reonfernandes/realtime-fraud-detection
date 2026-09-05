@@ -36,6 +36,9 @@ security:
     kafka:
         topic:
             transaction: raw_transaction
+            partitions: 3
+        consumer:
+            concurrency: 3
     redis:
         transaction:
             key: titanguard:transaction:window

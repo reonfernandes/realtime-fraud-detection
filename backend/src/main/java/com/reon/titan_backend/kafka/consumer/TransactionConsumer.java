@@ -51,7 +51,8 @@ public class TransactionConsumer {
     )
     @KafkaListener(
             topics = "${security.kafka.topic.transaction}",
-            groupId = "${spring.kafka.consumer.group-id}"
+            groupId = "${spring.kafka.consumer.group-id}",
+            concurrency = "${security.kafka.consumer.concurrency}"
     )
     public void transactionWorkerEngine(TransactionEvent transactionEvent) {
         log.info("Consuming transaction event: {}", transactionEvent.transactionId());
