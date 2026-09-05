@@ -2,12 +2,15 @@ package com.reon.titan_backend.service.impl;
 
 import com.reon.titan_backend.document.FraudAlert;
 import com.reon.titan_backend.dto.TransactionEvent;
+import com.reon.titan_backend.dto.response.FraudAlertResponse;
 import com.reon.titan_backend.mapper.FraudAlertMapper;
 import com.reon.titan_backend.repository.FraudAlertRepository;
 import com.reon.titan_backend.service.FraudAlertService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -37,5 +40,19 @@ public class FraudAlertServiceImpl implements FraudAlertService {
                 transactionEvent.transactionId(),
                 reason
         );
+    }
+
+    @Override
+    public List<FraudAlertResponse> getAllAlerts(int page, int size) {
+        return fraudAlertRepository.findAll(PageRequest.of(page, size))
+                .map(fraudAlertMapper::toResponse)
+                .getContent();
+    }
+
+    @Override
+    public List<FraudAlertResponse> getUserAlerts(String userId, int page, int size) {
+        return fraudAlertRepository.findByUserId(userId, PageRequest.of(page, size))
+                .map(fraudAlertMapper::toResponse)
+                .getContent();
     }
 }

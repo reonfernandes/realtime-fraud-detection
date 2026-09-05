@@ -13,9 +13,11 @@ import com.reon.titan_backend.repository.TransactionRepository;
 import com.reon.titan_backend.service.RateLimiterService;
 import com.reon.titan_backend.service.TransactionService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -64,6 +66,13 @@ public class TransactionServiceImpl implements TransactionService {
                 () -> new TransactionNotFound("Transaction not found..")
         );
         return transactionMapper.transactionStatusResponse(transaction);
+    }
+
+    @Override
+    public List<TransactionResponse> getUserTransactions(String userId, int page, int size) {
+        return transactionRepository.findByUserId(userId, PageRequest.of(page, size))
+                .map(transactionMapper::responseToUser)
+                .getContent();
     }
 
     @Override

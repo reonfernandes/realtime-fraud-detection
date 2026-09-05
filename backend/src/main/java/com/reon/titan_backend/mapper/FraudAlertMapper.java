@@ -2,6 +2,7 @@ package com.reon.titan_backend.mapper;
 
 import com.reon.titan_backend.document.FraudAlert;
 import com.reon.titan_backend.dto.TransactionEvent;
+import com.reon.titan_backend.dto.response.FraudAlertResponse;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -13,5 +14,15 @@ public class FraudAlertMapper {
                 .flaggedAt(transactionEvent.transactionTimeStamp())
                 .build();
         return fraudAlert;
+    }
+
+    public FraudAlertResponse toResponse(FraudAlert fraudAlert) {
+        return FraudAlertResponse.builder()
+                .alertId(fraudAlert.getAlertId())
+                .targetTransactionId(fraudAlert.getTargetTransactionId())
+                .userId(fraudAlert.getUserId())
+                .reason(fraudAlert.getReason())
+                .flaggedAt(fraudAlert.getFlaggedAt())
+                .build();
     }
 }
