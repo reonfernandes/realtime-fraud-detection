@@ -6,6 +6,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 @Document(collection = "transactions")
@@ -19,7 +20,7 @@ public class Transaction {
     private String transactionId;
     @Indexed
     private String userId;
-    private Double amount;
+    private BigDecimal amount;
 
     private Instant timestamp;
 

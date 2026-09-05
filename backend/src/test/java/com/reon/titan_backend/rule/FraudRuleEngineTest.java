@@ -3,6 +3,7 @@ package com.reon.titan_backend.rule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -15,7 +16,7 @@ class FraudRuleEngineTest {
     @BeforeEach
     void setUp() {
         // max 3 per window, high value above 50000, suspicious hours 1 to 4, daily limit 50000
-        fraudRuleEngine = new FraudRuleEngine(3, 50000.0, 1, 4, 50000.0);
+        fraudRuleEngine = new FraudRuleEngine(3, new BigDecimal("50000"), 1, 4, new BigDecimal("50000"));
     }
 
     @Test
@@ -30,12 +31,17 @@ class FraudRuleEngineTest {
 
     @Test
     void amountAboveLimitIsHighValue() {
-        assertTrue(fraudRuleEngine.isHighValueTransaction(60000.0));
+        assertTrue(fraudRuleEngine.isHighValueTransaction(new BigDecimal("60000")));
     }
 
     @Test
     void amountEqualToLimitIsNotHighValue() {
-        assertFalse(fraudRuleEngine.isHighValueTransaction(50000.0));
+        assertFalse(fraudRuleEngine.isHighValueTransaction(new BigDecimal("50000.00")));
+    }
+
+    @Test
+    void oneRupeeOverTheLimitIsHighValue() {
+        assertTrue(fraudRuleEngine.isHighValueTransaction(new BigDecimal("50000.01")));
     }
 
     @Test
@@ -65,7 +71,7 @@ class FraudRuleEngineTest {
 
     @Test
     void overnightWindowWorksAfterMidnight() {
-        FraudRuleEngine nightRuleEngine = new FraudRuleEngine(3, 50000.0, 23, 4, 50000.0);
+        FraudRuleEngine nightRuleEngine = new FraudRuleEngine(3, new BigDecimal("50000"), 23, 4, new BigDecimal("50000"));
 
         assertTrue(nightRuleEngine.isSuspiciousTime(Instant.parse("2026-05-24T23:30:00Z")));
         assertTrue(nightRuleEngine.isSuspiciousTime(Instant.parse("2026-05-24T01:00:00Z")));
@@ -74,11 +80,19 @@ class FraudRuleEngineTest {
 
     @Test
     void totalAboveDailyLimitIsFlagged() {
-        assertTrue(fraudRuleEngine.isDailyLimitExceeded(50001.0));
+        assertTrue(fraudRuleEngine.isDailyLimitExceeded(new BigDecimal("50000.01")));
     }
 
     @Test
     void totalEqualToDailyLimitIsAllowed() {
-        assertFalse(fraudRuleEngine.isDailyLimitExceeded(50000.0));
+        assertFalse(fraudRuleEngine.isDailyLimitExceeded(new BigDecimal("50000")));
+    }
+
+    @Test
+    void amountsThatAddUpToTheLimitExactlyAreAllowed() {
+        // with double this sum can come out slightly above 50000 and get wrongly flagged
+        BigDecimal total = new BigDecimal("20000.10").add(new BigDecimal("29999.90"));
+
+        assertFalse(fraudRuleEngine.isDailyLimitExceeded(total));
     }
 }

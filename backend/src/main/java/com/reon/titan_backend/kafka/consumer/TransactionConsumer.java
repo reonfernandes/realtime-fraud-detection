@@ -18,6 +18,8 @@ import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -74,7 +76,7 @@ public class TransactionConsumer {
 
     private void evaluateTransaction(TransactionEvent transactionEvent) {
         Long currentCount = cachingService.incrementAndRetrieveCount(transactionEvent.userId());
-        Double currentDailyTransactionTotal = cachingService.getDailySum(transactionEvent.userId());
+        BigDecimal currentDailyTransactionTotal = cachingService.getDailySum(transactionEvent.userId());
 
         String fraudReason = null;
         if (fraudRuleEngine.hasWindowLimitExceeded(currentCount)) {
@@ -83,7 +85,7 @@ public class TransactionConsumer {
             fraudReason = "High-value transaction limit exceeded.";
         } else if (fraudRuleEngine.isSuspiciousTime(transactionEvent.transactionTimeStamp())) {
             fraudReason = "Transaction occurred during suspicious time window.";
-        } else if (fraudRuleEngine.isDailyLimitExceeded(currentDailyTransactionTotal + transactionEvent.amount())) {
+        } else if (fraudRuleEngine.isDailyLimitExceeded(currentDailyTransactionTotal.add(transactionEvent.amount()))) {
             fraudReason = "Daily Transaction limit reached.";
         }
 
@@ -92,7 +94,7 @@ public class TransactionConsumer {
             transactionService.updateTransactionStatus(transactionEvent.transactionId(), Status.FRAUDULENT);
         } else {
             // only approved amount should add up in the daily total
-            cachingService.incrementAndRetrieveDailySum(transactionEvent.userId(), transactionEvent.amount());
+            cachingService.incrementDailySum(transactionEvent.userId(), transactionEvent.amount());
             transactionService.updateTransactionStatus(transactionEvent.transactionId(), Status.APPROVED);
         }
 

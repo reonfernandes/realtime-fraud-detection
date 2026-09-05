@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -62,19 +63,21 @@ public class TransactionCachingServiceImpl implements TransactionCachingService 
     }
 
     @Override
-    public Double incrementAndRetrieveDailySum(String userId, Double amount) {
+    public void incrementDailySum(String userId, BigDecimal amount) {
         String key = generateDailySumKey(userId);
 
         redisTemplate.opsForValue().setIfAbsent(key, "0", Duration.ofDays(dailySumKeyExpiration));
-        Double currentTotal = redisTemplate.opsForValue().increment(key, amount);
 
-        return currentTotal != null ? currentTotal : 0.0;
+        // redis does the adding so two threads cannot overwrite each other
+        redisTemplate.opsForValue().increment(key, amount.doubleValue());
     }
 
     @Override
-    public Double getDailySum(String userId) {
+    public BigDecimal getDailySum(String userId) {
         String currentTotal = redisTemplate.opsForValue().get(generateDailySumKey(userId));
-        return currentTotal != null ? Double.parseDouble(currentTotal) : 0.0;
+
+        // redis keeps the value as a plain string, so reading it back is exact
+        return currentTotal != null ? new BigDecimal(currentTotal) : BigDecimal.ZERO;
     }
 
     @Override

@@ -3,23 +3,24 @@ package com.reon.titan_backend.rule;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneOffset;
 
 @Component
 public class FraudRuleEngine {
     private final int MAX_TRANSACTION_PER_WINDOW;
-    private final double HIGH_VALUE_LIMIT;
+    private final BigDecimal HIGH_VALUE_LIMIT;
     private final int SUSPICIOUS_START_HOUR;
     private final int SUSPICIOUS_END_HOUR;
-    private final double DAILY_MAX_TRANSACTION_AMOUNT;
+    private final BigDecimal DAILY_MAX_TRANSACTION_AMOUNT;
 
     public FraudRuleEngine(
             @Value("${security.transactions.max-count}") int maxTransactionPerWindow,
-            @Value("${security.transactions.high-value-limit}") double highValueLimit,
+            @Value("${security.transactions.high-value-limit}") BigDecimal highValueLimit,
             @Value("${security.transactions.suspicious-window.start-hour}") int suspiciousStartHour,
             @Value("${security.transactions.suspicious-window.end-hour}") int suspiciousEndHour,
-            @Value("${security.transactions.daily-sum.limit}") double dailyMaxTransactionAmount
+            @Value("${security.transactions.daily-sum.limit}") BigDecimal dailyMaxTransactionAmount
     ) {
         MAX_TRANSACTION_PER_WINDOW = maxTransactionPerWindow;
         HIGH_VALUE_LIMIT = highValueLimit;
@@ -32,8 +33,9 @@ public class FraudRuleEngine {
         return currentWindowCount > MAX_TRANSACTION_PER_WINDOW;
     }
 
-    public boolean isHighValueTransaction(Double amount) {
-        return amount != null && amount > HIGH_VALUE_LIMIT;
+    public boolean isHighValueTransaction(BigDecimal amount) {
+        // compareTo returns 1 when amount is bigger than the limit
+        return amount != null && amount.compareTo(HIGH_VALUE_LIMIT) > 0;
     }
 
     public boolean isSuspiciousTime(Instant timestamp) {
@@ -48,7 +50,7 @@ public class FraudRuleEngine {
         }
     }
 
-    public boolean isDailyLimitExceeded(Double currentTotal) {
-        return currentTotal != null && currentTotal > DAILY_MAX_TRANSACTION_AMOUNT;
+    public boolean isDailyLimitExceeded(BigDecimal currentTotal) {
+        return currentTotal != null && currentTotal.compareTo(DAILY_MAX_TRANSACTION_AMOUNT) > 0;
     }
 }
