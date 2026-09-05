@@ -1,9 +1,58 @@
 server:
-    port: 8200
+    port: ${SERVER_PORT:8200}
 
 spring:
     mongodb:
         uri: ${MONGODB_URI}
     data:
+        mongodb:
+            auto-index-creation: true
         redis:
             url: ${REDIS_URL}
+    kafka:
+        bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+        producer:
+            key-serializer: org.apache.kafka.common.serialization.StringSerializer
+            value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+            retries: 3
+            acks: all
+        consumer:
+            key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+            value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+            group-id: titan_guard_consumer
+            auto-offset-reset: earliest
+            enable-auto-commit: false
+            properties:
+                spring:
+                    json:
+                        trusted:
+                            packages: "com.reon.titan_backend.dto"
+
+security:
+    kafka:
+        topic:
+            transaction: raw_transaction
+            partitions: 3
+        consumer:
+            concurrency: 3
+    redis:
+        transaction:
+            key: titanguard:transaction:window
+            expiration: 60
+        ratelimit:
+            key: titanguard:ratelimit:window
+            expiration: 60
+            max-requests: ${RATE_LIMIT_MAX_REQUESTS:5}
+        processed:
+            key: titanguard:transaction:processed
+            expiration: 3600
+    transactions:
+        max-count: ${TRANSACTION_MAX_COUNT:3}
+        high-value-limit: ${HIGH_VALUE_LIMIT:50000.0}
+        suspicious-window:
+            start-hour: ${SUSPICIOUS_START_HOUR:1}
+            end-hour: ${SUSPICIOUS_END_HOUR:4}
+        daily-sum:
+            key: titanguard:transaction:dailysum
+            limit: ${DAILY_SUM_LIMIT:50000.0}
+            expiration-days: 1

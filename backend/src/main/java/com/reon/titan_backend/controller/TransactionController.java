@@ -3,13 +3,15 @@ package com.reon.titan_backend.controller;
 import com.reon.titan_backend.dto.TransactionRequest;
 import com.reon.titan_backend.dto.response.TransactionResponse;
 import com.reon.titan_backend.dto.response.TransactionStatusResponse;
-import com.reon.titan_backend.exception.response.ApiResponse;
+import com.reon.titan_backend.dto.response.ApiResponse;
 import com.reon.titan_backend.service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/transactions")
@@ -30,6 +32,21 @@ public class TransactionController {
                         true,
                         "Transaction accepted into processing pipeline.",
                         response
+                ));
+    }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<ApiResponse<List<TransactionResponse>>> getUserTransactions(
+            @PathVariable String userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        List<TransactionResponse> transactions = transactionService.getUserTransactions(userId, page, size);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(new ApiResponse<>(
+                        true,
+                        "User transactions fetched",
+                        transactions
                 ));
     }
 

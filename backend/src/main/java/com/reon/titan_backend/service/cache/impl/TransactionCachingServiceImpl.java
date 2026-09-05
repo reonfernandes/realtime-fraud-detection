@@ -7,6 +7,8 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 
 @Service
 @Slf4j
@@ -43,6 +45,11 @@ public class TransactionCachingServiceImpl implements TransactionCachingService 
         return uniqueKey + ":" + userId;
     }
 
+    private String generateDailySumKey(String userId) {
+        // date is part of the key so the total starts fresh every day
+        return dailySumKey + ":" + userId + ":" + LocalDate.now(ZoneOffset.UTC);
+    }
+
     @Override
     public Long incrementAndRetrieveCount(String userId) {
         String key = generateUniqueUserTransactionKey(userId);
@@ -56,7 +63,7 @@ public class TransactionCachingServiceImpl implements TransactionCachingService 
 
     @Override
     public Double incrementAndRetrieveDailySum(String userId, Double amount) {
-        String key = dailySumKey + ":" + userId;
+        String key = generateDailySumKey(userId);
 
         redisTemplate.opsForValue().setIfAbsent(key, "0", Duration.ofDays(dailySumKeyExpiration));
         Double currentTotal = redisTemplate.opsForValue().increment(key, amount);
@@ -66,7 +73,7 @@ public class TransactionCachingServiceImpl implements TransactionCachingService 
 
     @Override
     public Double getDailySum(String userId) {
-        String currentTotal = redisTemplate.opsForValue().get(dailySumKey + ":" + userId);
+        String currentTotal = redisTemplate.opsForValue().get(generateDailySumKey(userId));
         return currentTotal != null ? Double.parseDouble(currentTotal) : 0.0;
     }
 

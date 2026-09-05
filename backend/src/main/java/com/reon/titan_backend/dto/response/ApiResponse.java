@@ -1,4 +1,4 @@
-package com.reon.titan_backend.exception.response;
+package com.reon.titan_backend.dto.response;
 
 import lombok.Builder;
 
