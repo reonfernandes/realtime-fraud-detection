@@ -46,6 +46,15 @@ security:
         processed:
             key: titanguard:transaction:processed
             expiration: 3600
+    jwt:
+        secret-key: ${JWT_SECRET}
+        issuer: ${JWT_ISSUER:titanguard}
+        access-token-name: ${ACCESS_TOKEN_NAME:access_token}
+        access-token-expiry: ${ACCESS_TOKEN_EXPIRY:3600}
+    cookie:
+        name: ${COOKIE_NAME:access_token}
+        expiry: ${COOKIE_EXPIRY:3600}
+        secure: ${COOKIE_SECURE:true}
     transactions:
         max-count: ${TRANSACTION_MAX_COUNT:3}
         high-value-limit: ${HIGH_VALUE_LIMIT:50000.0}

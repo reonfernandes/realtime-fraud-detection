@@ -61,11 +61,12 @@ security:
             limit: 50000.0
             expiration-days: 1
     jwt:
-        secret-key: ${JWT_SECRET}
-        issuer: ${JWT_ISSUER}
-        access-token-name: ${ACCESS_TOKEN_NAME}
-        access-token-expiry: ${ACCESS_TOKEN_EXPIRY}
+        # local only key, prod reads it from the environment
+        secret-key: ${JWT_SECRET:dGl0YW5ndWFyZC1sb2NhbC1kZXZlbG9wbWVudC1vbmx5LXNlY3JldC1rZXktNDhi}
+        issuer: ${JWT_ISSUER:titanguard}
+        access-token-name: ${ACCESS_TOKEN_NAME:access_token}
+        access-token-expiry: ${ACCESS_TOKEN_EXPIRY:3600}
     cookie:
-        name: ${COOKIE_NAME}
-        expiry: ${COOKIE_EXPIRY}
+        name: ${COOKIE_NAME:access_token}
+        expiry: ${COOKIE_EXPIRY:3600}
         secure: ${COOKIE_SECURE:false}
