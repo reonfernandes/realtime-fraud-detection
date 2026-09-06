@@ -60,3 +60,12 @@ security:
             key: titanguard:transaction:dailysum
             limit: 50000.0
             expiration-days: 1
+    jwt:
+        secret-key: ${JWT_SECRET}
+        issuer: ${JWT_ISSUER}
+        access-token-name: ${ACCESS_TOKEN_NAME}
+        access-token-expiry: ${ACCESS_TOKEN_EXPIRY}
+    cookie:
+        name: ${COOKIE_NAME}
+        expiry: ${COOKIE_EXPIRY}
+        secure: ${COOKIE_SECURE:false}
