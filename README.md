@@ -120,6 +120,33 @@ cd backend
 The default config points to localhost, so no environment variables are needed.
 To override anything, copy `.env.example` to `.env` and edit it.
 
+### Metrics and dashboards
+Prometheus scrapes the app every 15s and Grafana reads from Prometheus.
+
+- Raw metrics: `http://localhost:8100/actuator/prometheus`
+- Prometheus: `http://localhost:9090`
+- Grafana: `http://localhost:3000` (admin / admin)
+
+The Prometheus datasource is already wired up in Grafana. To get a dashboard,
+go to Dashboards > New > Import and enter id **4701** (JVM Micrometer).
+
+### Load testing
+The load test needs [k6](https://k6.io/docs/get-started/installation/).
+
+The rate limiter allows 5 requests per user per 60s, which is a product rule and not
+a throughput limit, so raise it for the run otherwise everything comes back 429:
+
+```bash
+RATE_LIMIT_MAX_REQUESTS=100000 docker-compose up -d --build
+k6 run loadtest/transactions.js
+```
+
+Options: `VUS` (default 20) and `DURATION` (default 60s).
+
+```bash
+k6 run -e VUS=50 -e DURATION=120s loadtest/transactions.js
+```
+
 ### Running the tests
 ```bash
 cd backend
