@@ -51,12 +51,41 @@ services:
             REDIS_PORT: 6379
             REDIS_DATABASE: 0
             KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+            # raised during load testing, see README
+            RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-5}
         depends_on:
             - mongodb
             - redis
             - kafka
 
+    prometheus:
+        image: prom/prometheus:v3.7.3
+        container_name: titan_guard_prometheus
+        ports:
+            -   "9090:9090"
+        volumes:
+            - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+            - prometheus_data:/prometheus
+        depends_on:
+            - backend
+
+    grafana:
+        image: grafana/grafana:12.3.1
+        container_name: titan_guard_grafana
+        ports:
+            -   "3000:3000"
+        environment:
+            GF_SECURITY_ADMIN_USER: admin
+            GF_SECURITY_ADMIN_PASSWORD: admin
+        volumes:
+            - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+            - grafana_data:/var/lib/grafana
+        depends_on:
+            - prometheus
+
 volumes:
     mongo_data:
     redis_cache_data:
     kafka_data:
+    prometheus_data:
+    grafana_data:

@@ -46,7 +46,7 @@ security:
         ratelimit:
             key: titanguard:ratelimit:window
             expiration: 60
-            max-requests: 5
+            max-requests: ${RATE_LIMIT_MAX_REQUESTS:5}
         processed:
             key: titanguard:transaction:processed
             expiration: 3600
@@ -70,3 +70,9 @@ security:
         name: ${COOKIE_NAME:access_token}
         expiry: ${COOKIE_EXPIRY:3600}
         secure: ${COOKIE_SECURE:false}
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health,info,prometheus

@@ -34,6 +34,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**").permitAll()
+                        // prometheus scrapes this, it has no token to send
+                        .requestMatchers("/actuator/**").permitAll()
                         // admin rules must come first, spring uses the first matching rule
                         .requestMatchers("/api/v1/fraud-alerts/**", "/api/v1/failed-transactions/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/transactions/user/**").hasRole("ADMIN")
