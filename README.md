@@ -57,10 +57,11 @@ TitanGuard follows a modern, event-driven microservices pattern:
 
 **Description:** Submits a new transaction for fraud evaluation.
 
+**Requires a valid JWT** (`Authorization: Bearer <token>`). The user is taken from the token, not the body.
+
 **Request Body:**
 ```json
 {
-  "userId": "user_101",
   "amount": 15000.0
 }
 ```
@@ -79,6 +80,11 @@ TitanGuard follows a modern, event-driven microservices pattern:
     "timestamp": "2026-05-24T05:01:41.480Z"
 }
 ```
+
+### My Transactions
+`GET /api/v1/transactions/me?page=0&size=10`
+
+**Description:** Returns the logged in user's transactions.
 
 ### Transaction Status
 `GET /api/v1/transactions/{id}`
