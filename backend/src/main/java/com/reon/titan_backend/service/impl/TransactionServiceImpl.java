@@ -37,12 +37,12 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public TransactionResponse generateNewTransaction(TransactionRequest transactionRequest) {
-        // check for request limit
-        rateLimiterService.enforceRateLimit(transactionRequest.userId());
+    public TransactionResponse generateNewTransaction(TransactionRequest transactionRequest, String userId) {
+        // userId comes from the logged in user, never from the request body
+        rateLimiterService.enforceRateLimit(userId);
 
-        log.info("Processing new transaction for user: {}", transactionRequest.userId());
-        Transaction transaction = transactionMapper.mapToEntity(transactionRequest);
+        log.info("Processing new transaction for user: {}", userId);
+        Transaction transaction = transactionMapper.mapToEntity(transactionRequest, userId);
 
         String uniqueTransactionId = UUID.randomUUID().toString();
         transaction.setTransactionId(uniqueTransactionId);
