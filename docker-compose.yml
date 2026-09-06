@@ -51,6 +51,8 @@ services:
             REDIS_PORT: 6379
             REDIS_DATABASE: 0
             KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+            # raised during load testing, see README
+            RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-5}
         depends_on:
             - mongodb
             - redis
