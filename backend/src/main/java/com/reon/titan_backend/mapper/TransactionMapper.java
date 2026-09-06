@@ -9,9 +9,9 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class TransactionMapper {
-    public Transaction mapToEntity(TransactionRequest request) {
+    public Transaction mapToEntity(TransactionRequest request, String userId) {
         Transaction transaction = Transaction.builder()
-                .userId(request.userId())
+                .userId(userId)
                 .amount(request.amount())
                 .build();
         return transaction;
