@@ -1,5 +1,6 @@
 package com.reon.titan_backend.controller;
 
+import com.reon.titan_backend.common.ClientIpResolver;
 import com.reon.titan_backend.dto.SignInRequest;
 import com.reon.titan_backend.dto.SignUpRequest;
 import com.reon.titan_backend.dto.response.ApiResponse;
@@ -7,6 +8,8 @@ import com.reon.titan_backend.dto.response.SignInResponse;
 import com.reon.titan_backend.dto.response.SignUpResponse;
 import com.reon.titan_backend.service.AuthService;
 import com.reon.titan_backend.service.CookieService;
+import com.reon.titan_backend.service.RateLimiterService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -24,14 +27,20 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
     private final AuthService authService;
     private final CookieService cookieService;
+    private final RateLimiterService rateLimiterService;
 
-    public AuthController(AuthService authService, CookieService cookieService) {
+    public AuthController(AuthService authService, CookieService cookieService,
+                          RateLimiterService rateLimiterService) {
         this.authService = authService;
         this.cookieService = cookieService;
+        this.rateLimiterService = rateLimiterService;
     }
 
     @PostMapping("/signUp")
-    public ResponseEntity<ApiResponse<SignUpResponse>> signUp(@Valid @RequestBody SignUpRequest request) {
+    public ResponseEntity<ApiResponse<SignUpResponse>> signUp(@Valid @RequestBody SignUpRequest request,
+                                                             HttpServletRequest httpRequest) {
+        rateLimiterService.enforceAuthRateLimit(ClientIpResolver.resolve(httpRequest));
+
         log.info("Incoming request for signUp:..............{}", request.email());
         SignUpResponse signUpResponse = authService.generateUser(request);
         return ResponseEntity
@@ -44,7 +53,10 @@ public class AuthController {
     }
 
     @PostMapping("/signIn")
-    public ResponseEntity<ApiResponse<SignInResponse>> signIn(@Valid @RequestBody SignInRequest request) {
+    public ResponseEntity<ApiResponse<SignInResponse>> signIn(@Valid @RequestBody SignInRequest request,
+                                                             HttpServletRequest httpRequest) {
+        rateLimiterService.enforceAuthRateLimit(ClientIpResolver.resolve(httpRequest));
+
         log.info("Incoming request for signIn:..............{}", request.email());
         SignInResponse signInResponse = authService.authenticateUser(request);
 
