@@ -55,6 +55,9 @@ security:
         name: ${COOKIE_NAME:access_token}
         expiry: ${COOKIE_EXPIRY:3600}
         secure: ${COOKIE_SECURE:true}
+    admin:
+        email: ${ADMIN_EMAIL:}
+        password: ${ADMIN_PASSWORD:}
     transactions:
         max-count: ${TRANSACTION_MAX_COUNT:3}
         high-value-limit: ${HIGH_VALUE_LIMIT:50000.0}

@@ -14,7 +14,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // prometheus scrapes without a token, so this endpoint must stay open
 @SpringBootTest
 @AutoConfigureMockMvc
-@TestPropertySource(properties = "spring.data.mongodb.auto-index-creation=false")
+@TestPropertySource(properties = {
+        "spring.data.mongodb.auto-index-creation=false",
+        // blank so the admin seeder skips, tests have no mongo running
+        "security.admin.email=",
+        "security.admin.password="
+})
 class MetricsEndpointTest {
 
     @Autowired

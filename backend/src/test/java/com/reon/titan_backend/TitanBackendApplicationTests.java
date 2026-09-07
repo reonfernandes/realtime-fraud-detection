@@ -6,7 +6,12 @@ import org.springframework.test.context.TestPropertySource;
 
 // index creation needs a running mongo, tests do not have one
 @SpringBootTest
-@TestPropertySource(properties = "spring.data.mongodb.auto-index-creation=false")
+@TestPropertySource(properties = {
+        "spring.data.mongodb.auto-index-creation=false",
+        // blank so the admin seeder skips, tests have no mongo running
+        "security.admin.email=",
+        "security.admin.password="
+})
 class TitanBackendApplicationTests {
 
 	@Test
