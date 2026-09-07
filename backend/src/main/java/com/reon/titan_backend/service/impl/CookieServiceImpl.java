@@ -42,4 +42,17 @@ public class CookieServiceImpl implements CookieService {
                 .maxAge(Duration.ofSeconds(COOKIE_EXPIRY))
                 .build();
     }
+
+    @Override
+    public ResponseCookie clearAccessTokenCookie() {
+        log.info("Clearing access token cookie:.............");
+        // same name and path as the real one, empty value and maxAge 0 tells the browser to drop it
+        return ResponseCookie.from(COOKIE_NAME, "")
+                .httpOnly(true)
+                .secure(COOKIE_SECURE)
+                .path("/")
+                .sameSite("Strict")
+                .maxAge(Duration.ZERO)
+                .build();
+    }
 }

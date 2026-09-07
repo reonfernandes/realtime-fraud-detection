@@ -1,6 +1,7 @@
 package com.reon.titan_backend.jwt.impl;
 
 import com.reon.titan_backend.jwt.JwtService;
+import com.reon.titan_backend.service.TokenBlacklistService;
 import com.reon.titan_backend.service.security.CustomUserDetailService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -30,10 +31,13 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final CustomUserDetailService userDetailService;
+    private final TokenBlacklistService tokenBlacklistService;
 
-    public JwtFilter(JwtService jwtService, CustomUserDetailService userDetailService) {
+    public JwtFilter(JwtService jwtService, CustomUserDetailService userDetailService,
+                     TokenBlacklistService tokenBlacklistService) {
         this.jwtService = jwtService;
         this.userDetailService = userDetailService;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     @Override
@@ -60,6 +64,13 @@ public class JwtFilter extends OncePerRequestFilter {
 
         try {
             if (jwtService.isTokenValid(jwt)) {
+                // logged out tokens are still signed and unexpired, so check the list first
+                if (tokenBlacklistService.isBlacklisted(jwtService.extractTokenId(jwt))) {
+                    log.debug("Token was logged out, not authenticating");
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
                 String username = jwtService.extractUsernameFromToken(jwt);
 
                 // 3. load the user fresh from the db so a disabled/deleted account

@@ -7,7 +7,9 @@ import com.reon.titan_backend.dto.response.ApiResponse;
 import com.reon.titan_backend.dto.response.SignInResponse;
 import com.reon.titan_backend.dto.response.SignUpResponse;
 import com.reon.titan_backend.service.AuthService;
+import com.reon.titan_backend.jwt.JwtService;
 import com.reon.titan_backend.service.CookieService;
+import com.reon.titan_backend.service.TokenBlacklistService;
 import com.reon.titan_backend.service.RateLimiterService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -28,12 +30,17 @@ public class AuthController {
     private final AuthService authService;
     private final CookieService cookieService;
     private final RateLimiterService rateLimiterService;
+    private final JwtService jwtService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     public AuthController(AuthService authService, CookieService cookieService,
-                          RateLimiterService rateLimiterService) {
+                          RateLimiterService rateLimiterService, JwtService jwtService,
+                          TokenBlacklistService tokenBlacklistService) {
         this.authService = authService;
         this.cookieService = cookieService;
         this.rateLimiterService = rateLimiterService;
+        this.jwtService = jwtService;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     @PostMapping("/signUp")
@@ -71,6 +78,27 @@ public class AuthController {
                         true,
                         "SignIn success",
                         signInResponse
+                ));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<String>> logout(HttpServletRequest httpRequest) {
+        String token = jwtService.extractJwtFromRequest(httpRequest);
+
+        if (token != null && jwtService.isTokenValid(token)) {
+            tokenBlacklistService.blacklist(jwtService.extractTokenId(token), jwtService.secondsUntilExpiry(token));
+        }
+
+        // clear the cookie as well, otherwise the browser keeps sending the old token
+        ResponseCookie cookie = cookieService.clearAccessTokenCookie();
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(new ApiResponse<>(
+                        true,
+                        "Logout success",
+                        null
                 ));
     }
 }
