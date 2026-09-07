@@ -26,12 +26,12 @@ Measured at **~205 req/s with p95 400ms and zero failed requests** on a local Do
 Load tested with [k6](loadtest/transactions.js) against `POST /api/v1/transactions`, with the whole stack running in
 Docker on a single dev machine (Core i3 7th gen, 12 GB RAM).
 
-| Virtual users | Throughput | p95 latency | Failed requests |
-|---------------|------------|-------------|-----------------|
-| 10            | 80.7 req/s | 198 ms      | 0               |
-| 25            | 135.0 req/s | 317 ms     | 0               |
-| 50            | **204.2 req/s** | **400 ms** | 0          |
-| 100           | 209.7 req/s | 709 ms     | 0               |
+| Virtual users | Throughput      | p95 latency | Failed requests |
+|---------------|-----------------|-------------|-----------------|
+| 10            | 80.7 req/s      | 198 ms      | 0               |
+| 25            | 135.0 req/s     | 317 ms      | 0               |
+| 50            | **204.2 req/s** | **400 ms**  | 0               |
+| 100           | 209.7 req/s     | 709 ms      | 0               |
 
 **46,765 requests in total, zero failures.**
 
@@ -72,18 +72,18 @@ TitanGuard follows a modern, event-driven microservices pattern:
 
 ## Tech Stack
 
-| Layer                | Technology              | Purpose                                   |
-|----------------------|-------------------------|-------------------------------------------|
-| **Language**         | Java 21                 | Core application development              |
-| **Framework**        | Spring Boot 4.x         | API Development & Kafka Orchestration     |
-| **Security**         | Spring Security + JWT   | Authentication and role based access      |
-| **Message Broker**   | Apache Kafka (KRaft)    | Distributed event streaming & ingestion   |
-| **Cache / Tracking** | Redis                   | Rate limiting, windowing, idempotency     |
-| **Database**         | MongoDB                 | Storage for transactions and fraud alerts |
-| **Observability**    | Micrometer + Prometheus + Grafana | Metrics and dashboards          |
-| **Load Testing**     | k6                      | Throughput and latency measurement        |
-| **CI**               | GitHub Actions          | Builds the image on every pull request    |
-| **Containerization** | Docker + Docker Compose | Simplified infrastructure deployment      |
+| Layer                | Technology                        | Purpose                                   |
+|----------------------|-----------------------------------|-------------------------------------------|
+| **Language**         | Java 21                           | Core application development              |
+| **Framework**        | Spring Boot 4.x                   | API Development & Kafka Orchestration     |
+| **Security**         | Spring Security + JWT             | Authentication and role based access      |
+| **Message Broker**   | Apache Kafka (KRaft)              | Distributed event streaming & ingestion   |
+| **Cache / Tracking** | Redis                             | Rate limiting, windowing, idempotency     |
+| **Database**         | MongoDB                           | Storage for transactions and fraud alerts |
+| **Observability**    | Micrometer + Prometheus + Grafana | Metrics and dashboards                    |
+| **Load Testing**     | k6                                | Throughput and latency measurement        |
+| **CI**               | GitHub Actions                    | Builds the image on every pull request    |
+| **Containerization** | Docker + Docker Compose           | Simplified infrastructure deployment      |
 
 ---
 
