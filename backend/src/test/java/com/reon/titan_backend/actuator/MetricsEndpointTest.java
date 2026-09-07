@@ -28,6 +28,13 @@ class MetricsEndpointTest {
     }
 
     @Test
+    void apiDocsAreOpen() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("/api/v1/transactions")));
+    }
+
+    @Test
     void transactionEndpointStillNeedsLogin() throws Exception {
         mockMvc.perform(get("/api/v1/transactions/me"))
                 .andExpect(status().isUnauthorized());
