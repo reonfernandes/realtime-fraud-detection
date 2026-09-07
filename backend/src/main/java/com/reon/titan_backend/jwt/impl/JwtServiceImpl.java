@@ -98,6 +98,17 @@ public class JwtServiceImpl implements JwtService {
         }
     }
 
+    @Override
+    public String extractTokenId(String token) {
+        return extractClaims(token).getId();
+    }
+
+    @Override
+    public long secondsUntilExpiry(String token) {
+        long millisLeft = extractClaims(token).getExpiration().getTime() - System.currentTimeMillis();
+        return millisLeft > 0 ? millisLeft / 1000 : 0;
+    }
+
     private SecretKey key(){
         return Keys.hmacShaKeyFor(Decoders.BASE64URL.decode(JWT_SECRET));
     }

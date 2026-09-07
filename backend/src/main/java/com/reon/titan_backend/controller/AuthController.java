@@ -1,12 +1,17 @@
 package com.reon.titan_backend.controller;
 
+import com.reon.titan_backend.common.ClientIpResolver;
 import com.reon.titan_backend.dto.SignInRequest;
 import com.reon.titan_backend.dto.SignUpRequest;
 import com.reon.titan_backend.dto.response.ApiResponse;
 import com.reon.titan_backend.dto.response.SignInResponse;
 import com.reon.titan_backend.dto.response.SignUpResponse;
 import com.reon.titan_backend.service.AuthService;
+import com.reon.titan_backend.jwt.JwtService;
 import com.reon.titan_backend.service.CookieService;
+import com.reon.titan_backend.service.TokenBlacklistService;
+import com.reon.titan_backend.service.RateLimiterService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -24,14 +29,25 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
     private final AuthService authService;
     private final CookieService cookieService;
+    private final RateLimiterService rateLimiterService;
+    private final JwtService jwtService;
+    private final TokenBlacklistService tokenBlacklistService;
 
-    public AuthController(AuthService authService, CookieService cookieService) {
+    public AuthController(AuthService authService, CookieService cookieService,
+                          RateLimiterService rateLimiterService, JwtService jwtService,
+                          TokenBlacklistService tokenBlacklistService) {
         this.authService = authService;
         this.cookieService = cookieService;
+        this.rateLimiterService = rateLimiterService;
+        this.jwtService = jwtService;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     @PostMapping("/signUp")
-    public ResponseEntity<ApiResponse<SignUpResponse>> signUp(@Valid @RequestBody SignUpRequest request) {
+    public ResponseEntity<ApiResponse<SignUpResponse>> signUp(@Valid @RequestBody SignUpRequest request,
+                                                             HttpServletRequest httpRequest) {
+        rateLimiterService.enforceAuthRateLimit(ClientIpResolver.resolve(httpRequest));
+
         log.info("Incoming request for signUp:..............{}", request.email());
         SignUpResponse signUpResponse = authService.generateUser(request);
         return ResponseEntity
@@ -44,7 +60,10 @@ public class AuthController {
     }
 
     @PostMapping("/signIn")
-    public ResponseEntity<ApiResponse<SignInResponse>> signIn(@Valid @RequestBody SignInRequest request) {
+    public ResponseEntity<ApiResponse<SignInResponse>> signIn(@Valid @RequestBody SignInRequest request,
+                                                             HttpServletRequest httpRequest) {
+        rateLimiterService.enforceAuthRateLimit(ClientIpResolver.resolve(httpRequest));
+
         log.info("Incoming request for signIn:..............{}", request.email());
         SignInResponse signInResponse = authService.authenticateUser(request);
 
@@ -59,6 +78,27 @@ public class AuthController {
                         true,
                         "SignIn success",
                         signInResponse
+                ));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<String>> logout(HttpServletRequest httpRequest) {
+        String token = jwtService.extractJwtFromRequest(httpRequest);
+
+        if (token != null && jwtService.isTokenValid(token)) {
+            tokenBlacklistService.blacklist(jwtService.extractTokenId(token), jwtService.secondsUntilExpiry(token));
+        }
+
+        // clear the cookie as well, otherwise the browser keeps sending the old token
+        ResponseCookie cookie = cookieService.clearAccessTokenCookie();
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(new ApiResponse<>(
+                        true,
+                        "Logout success",
+                        null
                 ));
     }
 }

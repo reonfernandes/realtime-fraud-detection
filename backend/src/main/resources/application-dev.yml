@@ -47,6 +47,12 @@ security:
             key: titanguard:ratelimit:window
             expiration: 60
             max-requests: ${RATE_LIMIT_MAX_REQUESTS:5}
+        authratelimit:
+            key: titanguard:ratelimit:auth
+            expiration: 300
+            max-requests: 10
+        blacklist:
+            key: titanguard:token:blacklist
         processed:
             key: titanguard:transaction:processed
             expiration: 3600

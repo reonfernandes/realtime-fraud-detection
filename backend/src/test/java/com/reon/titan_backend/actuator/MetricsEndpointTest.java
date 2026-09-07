@@ -40,6 +40,12 @@ class MetricsEndpointTest {
     }
 
     @Test
+    void logoutIsReachableWithoutAToken() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/auth/logout"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void transactionEndpointStillNeedsLogin() throws Exception {
         mockMvc.perform(get("/api/v1/transactions/me"))
                 .andExpect(status().isUnauthorized());

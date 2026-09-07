@@ -148,6 +148,15 @@ Returns `409 Conflict` if the email is already registered.
 }
 ```
 
+### Logout
+`POST /api/v1/auth/logout`
+
+**Description:** Blacklists the current token until it would have expired, and clears the cookie.
+A jwt cannot be recalled once issued, so the token id is kept in redis and the filter rejects it
+on every later request. Safe to call without a token, it just clears the cookie.
+
+**Response:** `200 OK`
+
 ---
 
 ### Transactions Ingestion
@@ -311,6 +320,7 @@ cd backend
 ### Default Configuration
 - **Server Port:** 8100
 - **Rate Limit:** 5 requests per 60s per user (override with `RATE_LIMIT_MAX_REQUESTS`)
+- **Auth Rate Limit:** 10 signup/signin attempts per 300s per IP
 - **Fraud Rules (Dev):**
   - High Value Limit: > 50,000
   - Window Max Count: 3 transactions per 60s
