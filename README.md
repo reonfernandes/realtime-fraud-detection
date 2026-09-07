@@ -260,6 +260,21 @@ cd backend
 The default config points to localhost, so no environment variables are needed.
 To override anything, copy `.env.example` to `.env` and edit it.
 
+### API docs
+Swagger UI is served at `http://localhost:8100/swagger-ui.html`, raw spec at `/v3/api-docs`.
+Use signIn to get a token, then paste it into the Authorize box to call the protected endpoints.
+
+### First admin account
+Every signup gets the `USER` role, so the admin only endpoints need an account seeded on startup.
+Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` and one is created the first time the app boots. Locally it
+defaults to `admin@titanguard.local` / `Admin@123`.
+
+Leave both blank and nothing is created, then promote an account by hand instead:
+
+```
+db.users.updateOne({ email: "you@example.com" }, { $set: { roles: ["USER", "ADMIN"] } })
+```
+
 ### Metrics and dashboards
 Prometheus scrapes the app every 15s and Grafana reads from Prometheus.
 
